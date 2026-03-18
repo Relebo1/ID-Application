@@ -1,7 +1,15 @@
 import nodemailer from "nodemailer";
 
-// Uses Ethereal (fake SMTP) for development — swap with real SMTP in production
 async function getTransport() {
+  if (process.env.SMTP_HOST) {
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT ?? 587),
+      secure: process.env.SMTP_SECURE === "true",
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+  }
+  // Fallback to Ethereal for local dev only
   const testAccount = await nodemailer.createTestAccount();
   return nodemailer.createTransport({
     host: "smtp.ethereal.email",
@@ -15,7 +23,7 @@ export async function sendCredentialsEmail(to: string, name: string, tempPasswor
   const transport = await getTransport();
 
   const info = await transport.sendMail({
-    from: '"Lesotho Home Affairs" <noreply@homeaffairs.gov.ls>',
+    from: `"Lesotho Home Affairs" <${process.env.SMTP_FROM ?? "noreply@homeaffairs.gov.ls"}>`,
     to,
     subject: "Your Lesotho Home Affairs Portal Account",
     html: `
@@ -34,7 +42,7 @@ export async function sendCredentialsEmail(to: string, name: string, tempPasswor
             <p style="margin:0;font-size:18px;font-weight:bold;color:#003580;letter-spacing:2px;">${tempPassword}</p>
           </div>
           <p style="color:#dc2626;font-size:13px;font-weight:600;">⚠ You will be required to change this password on your first login.</p>
-          <a href="http://localhost:3000/login" style="display:inline-block;margin-top:16px;background:#003580;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL ?? "https://id-application.vercel.app"}/login" style="display:inline-block;margin-top:16px;background:#003580;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
             Sign In to Portal
           </a>
           <p style="color:#9ca3af;font-size:12px;margin-top:24px;">If you did not request this account, please contact Home Affairs immediately.</p>
@@ -43,7 +51,7 @@ export async function sendCredentialsEmail(to: string, name: string, tempPasswor
     `,
   });
 
-  // In development, log the Ethereal preview URL so you can view the email
-  console.log("📧 Credentials email preview:", nodemailer.getTestMessageUrl(info));
-  return nodemailer.getTestMessageUrl(info);
+  const previewUrl = nodemailer.getTestMessageUrl(info);
+  if (previewUrl) console.log("📧 Email preview:", previewUrl);
+  return previewUrl || null;
 }
