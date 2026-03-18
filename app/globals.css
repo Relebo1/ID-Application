@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --ls-blue: #003580;
+  --ls-green: #009A44;
+  --ls-white: #ffffff;
+}
+
+body {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("/bg/Coat_of_arms_of_Lesotho.svg.png") center / 420px no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Accessibility: focus ring */
+*:focus-visible {
+  outline: 3px solid var(--ls-blue);
+  outline-offset: 2px;
+}
+
+/* Skip to main content link for screen readers */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--ls-blue);
+  color: white;
+  padding: 8px 16px;
+  z-index: 100;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}
