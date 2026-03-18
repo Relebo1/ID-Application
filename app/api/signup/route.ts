@@ -17,8 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Name and email are required." }, { status: 400 });
   }
 
-  const conn = await getConnection();
+  let conn: any;
   try {
+    conn = await getConnection();
+
     const [existing] = await conn.query("SELECT id FROM citizens WHERE email = ?", [email]) as any[];
     if ((existing as any[]).length > 0) {
       return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
@@ -39,7 +41,14 @@ export async function POST(req: NextRequest) {
       message: "Account created. Check your email for login credentials.",
       ...(process.env.NODE_ENV !== "production" && { previewUrl, tempPassword }),
     }, { status: 201 });
+
+  } catch (err: any) {
+    console.error("Signup error:", err);
+    return NextResponse.json({
+      error: err?.message ?? "Internal server error",
+      code: err?.code ?? null,
+    }, { status: 500 });
   } finally {
-    await conn.end();
+    if (conn) await conn.end();
   }
 }
