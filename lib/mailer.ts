@@ -1,29 +1,20 @@
 import nodemailer from "nodemailer";
 
-async function getTransport() {
-  if (process.env.SMTP_HOST) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT ?? 587),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    });
-  }
-  // Fallback to Ethereal for local dev only
-  const testAccount = await nodemailer.createTestAccount();
+function getTransport() {
   return nodemailer.createTransport({
-    host: "smtp.ethereal.email",
-    port: 587,
-    secure: false,
-    auth: { user: testAccount.user, pass: testAccount.pass },
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
   });
 }
 
 export async function sendCredentialsEmail(to: string, name: string, tempPassword: string) {
-  const transport = await getTransport();
+  const transport = getTransport();
 
-  const info = await transport.sendMail({
-    from: `"Lesotho Home Affairs" <${process.env.SMTP_FROM ?? "noreply@homeaffairs.gov.ls"}>`,
+  await transport.sendMail({
+    from: `"Lesotho Home Affairs" <${process.env.GMAIL_USER}>`,
     to,
     subject: "Your Lesotho Home Affairs Portal Account",
     html: `
@@ -50,8 +41,4 @@ export async function sendCredentialsEmail(to: string, name: string, tempPasswor
       </div>
     `,
   });
-
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  if (previewUrl) console.log("📧 Email preview:", previewUrl);
-  return previewUrl || null;
 }
